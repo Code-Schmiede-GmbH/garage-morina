@@ -71,11 +71,27 @@
       : 'Zeit für Sommerreifen: Jetzt Termin für Reifenwechsel & Einlagerung sichern.';
     notice.querySelector('[data-season-text]').textContent = text;
     notice.setAttribute('data-season', winter ? 'winter' : 'summer');
-    // Mobil ersetzt ein runder Button den Balken
+    // Mobil ersetzt ein runder Button den Balken; ein Tipp öffnet die Infobox
     var fab = notice.querySelector('[data-season-fab]');
-    if (fab) {
-      fab.setAttribute('aria-label', text + ' Termin anfragen');
-      fab.title = winter ? 'Winterreifen: Termin anfragen' : 'Sommerreifen: Termin anfragen';
+    var pop = document.getElementById('season-pop');
+    if (fab && pop) {
+      var split = text.indexOf(': ');
+      pop.querySelector('[data-season-title]').textContent = text.slice(0, split);
+      pop.querySelector('[data-season-body]').textContent = text.slice(split + 2);
+      fab.setAttribute('aria-label', winter ? 'Hinweis Winterreifen anzeigen' : 'Hinweis Sommerreifen anzeigen');
+
+      var setOpen = function (open) {
+        pop.hidden = !open;
+        fab.setAttribute('aria-expanded', String(open));
+      };
+      fab.addEventListener('click', function () { setOpen(pop.hidden); });
+      pop.querySelector('[data-season-close]').addEventListener('click', function () { setOpen(false); fab.focus(); });
+      document.addEventListener('click', function (e) {
+        if (!pop.hidden && !pop.contains(e.target) && !fab.contains(e.target)) setOpen(false);
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !pop.hidden) { setOpen(false); fab.focus(); }
+      });
     }
     notice.hidden = false;
   }
