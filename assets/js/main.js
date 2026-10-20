@@ -2,25 +2,27 @@
 (function () {
   'use strict';
 
+  // Bearbeitbare Daten aus content/site.json, erzeugt als assets/js/content.js.
   // Öffnungszeiten (0 = Sonntag). Zeiten in Minuten ab Mitternacht.
-  var HOURS = {
-    1: [[480, 720], [810, 1080]],
-    2: [[480, 720], [810, 1080]],
-    3: [[480, 720], [810, 1080]],
-    4: [[480, 720], [810, 1080]],
-    5: [[480, 720], [810, 1080]],
-    6: [[480, 720]]
-  };
+  var C = window.GM_CONTENT || {};
+  var HOURS = C.hours;
+  var CLOSURE = C.closure;
+  var SEASON = C.season;
+  var EMAIL = (C.contact && C.contact.email) || 'info@garage-morina.ch';
   var DAYS = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
 
   // Aktuelle Zeit in Aarau, unabhängig von der Zeitzone des Besuchers.
   function zurichNow() {
     var parts = new Intl.DateTimeFormat('en-GB', {
-      timeZone: 'Europe/Zurich', weekday: 'short', hour: '2-digit', minute: '2-digit', month: 'numeric', hourCycle: 'h23'
+      timeZone: 'Europe/Zurich', weekday: 'short', hour: '2-digit', minute: '2-digit',
+      year: 'numeric', month: '2-digit', day: '2-digit', hourCycle: 'h23'
     }).formatToParts(new Date());
     var get = function (t) { return parts.find(function (p) { return p.type === t; }).value; };
     var day = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(get('weekday'));
-    return { day: day, minutes: +get('hour') * 60 + +get('minute'), month: +get('month') };
+    return {
+      day: day, minutes: +get('hour') * 60 + +get('minute'), month: +get('month'),
+      date: get('year') + '-' + get('month') + '-' + get('day')
+    };
   }
 
   function fmt(m) {
@@ -28,13 +30,26 @@
     return (h < 10 ? '0' : '') + h + ':' + (mm < 10 ? '0' : '') + mm;
   }
 
+  // Datum "JJJJ-MM-TT" um n Tage verschieben (in UTC gerechnet, damit die Sommerzeit nicht stört)
+  function addDays(iso, n) {
+    var d = new Date(iso + 'T00:00:00Z');
+    d.setUTCDate(d.getUTCDate() + n);
+    return d.toISOString().slice(0, 10);
+  }
+
+  function inClosure(iso) {
+    return !!CLOSURE && iso >= CLOSURE.from && iso <= CLOSURE.to;
+  }
+
   function nextOpening(now) {
-    for (var i = 0; i < 8; i++) {
+    for (var i = 0; i < 60; i++) {
       var d = (now.day + i) % 7;
-      var slots = HOURS[d] || [];
+      var date = addDays(now.date, i);
+      var slots = inClosure(date) ? [] : HOURS[d] || [];
       for (var s = 0; s < slots.length; s++) {
         if (i > 0 || slots[s][0] > now.minutes) {
-          var when = i === 0 ? 'heute' : i === 1 ? 'morgen' : DAYS[d];
+          var p = date.split('-');
+          var when = i === 0 ? 'heute' : i === 1 ? 'morgen' : i < 7 ? DAYS[d] : DAYS[d] + ', ' + +p[2] + '.' + +p[1] + '.';
           return when + ' um ' + fmt(slots[s][0]);
         }
       }
@@ -44,15 +59,15 @@
 
   var now = zurichNow();
 
-  // Status "Jetzt geöffnet"
-  document.querySelectorAll('[data-open-status]').forEach(function (el) {
-    var slots = HOURS[now.day] || [];
+  // Status "Jetzt geöffnet". Ohne Daten bleibt der statische Text stehen.
+  if (HOURS) document.querySelectorAll('[data-open-status]').forEach(function (el) {
+    var slots = inClosure(now.date) ? [] : HOURS[now.day] || [];
     var open = slots.find(function (s) { return now.minutes >= s[0] && now.minutes < s[1]; });
     if (open) {
       el.textContent = 'Jetzt geöffnet – bis ' + fmt(open[1]) + ' Uhr';
       el.classList.add('is-open');
     } else {
-      el.textContent = 'Zurzeit geschlossen – wieder offen ' + nextOpening(now) + ' Uhr';
+      el.textContent = (inClosure(now.date) ? 'Betriebsferien' : 'Zurzeit geschlossen') + ' – wieder offen ' + nextOpening(now) + ' Uhr';
       el.classList.add('is-closed');
     }
   });
@@ -62,22 +77,28 @@
     if (tr.getAttribute('data-days').split(',').indexOf(String(now.day)) !== -1) tr.classList.add('today');
   });
 
-  // Saisonhinweis Reifenwechsel (März/April und Oktober/November)
+  // Hinweis Betriebsferien, einige Tage vorher bis zum letzten Ferientag. Hat Vorrang vor dem Saisonhinweis.
+  var closureNotice = document.querySelector('[data-closure-notice]');
+  var closureShown = !!CLOSURE && now.date >= addDays(CLOSURE.from, -CLOSURE.showDaysBefore) && now.date <= CLOSURE.to;
+  if (closureNotice && closureShown) {
+    closureNotice.querySelector('[data-closure-text]').textContent = CLOSURE.text;
+    closureNotice.hidden = false;
+  }
+
+  // Saisonhinweis Reifenwechsel, in den Monaten aus content/site.json
   var notice = document.querySelector('[data-season-notice]');
-  if (notice && [3, 4, 10, 11].indexOf(now.month) !== -1) {
-    var winter = now.month >= 10;
-    var text = winter
-      ? 'Zeit für Winterreifen: Jetzt Termin für Reifenwechsel & Einlagerung sichern.'
-      : 'Zeit für Sommerreifen: Jetzt Termin für Reifenwechsel & Einlagerung sichern.';
-    notice.querySelector('[data-season-text]').textContent = text;
+  var winter = !!SEASON && SEASON.winter.months.indexOf(now.month) !== -1;
+  var summer = !!SEASON && SEASON.summer.months.indexOf(now.month) !== -1;
+  if (notice && !closureShown && (winter || summer)) {
+    var season = winter ? SEASON.winter : SEASON.summer;
+    notice.querySelector('[data-season-text]').textContent = season.title + (season.body ? ': ' + season.body : '');
     notice.setAttribute('data-season', winter ? 'winter' : 'summer');
     // Mobil ersetzt ein runder Button den Balken; ein Tipp öffnet die Infobox
     var fab = notice.querySelector('[data-season-fab]');
     var pop = document.getElementById('season-pop');
     if (fab && pop) {
-      var split = text.indexOf(': ');
-      pop.querySelector('[data-season-title]').textContent = text.slice(0, split);
-      pop.querySelector('[data-season-body]').textContent = text.slice(split + 2);
+      pop.querySelector('[data-season-title]').textContent = season.title;
+      pop.querySelector('[data-season-body]').textContent = season.body;
       fab.setAttribute('aria-label', winter ? 'Hinweis Winterreifen anzeigen' : 'Hinweis Sommerreifen anzeigen');
 
       var setOpen = function (open) {
@@ -157,7 +178,7 @@
         v('name')
       ].join('\n');
       var subject = 'Terminanfrage: ' + v('leistung') + (v('fahrzeug') ? ' – ' + v('fahrzeug') : '');
-      window.location.href = 'mailto:info@garage-morina.ch?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+      window.location.href = 'mailto:' + EMAIL + '?subject=' +encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
       var done = document.getElementById('form-done');
       if (done) done.hidden = false;
     });

@@ -14,7 +14,32 @@ Statische Website für die Garage Morina GmbH, Aarau. Reines HTML/CSS/JS ohne Bu
 | `angebot/`, `kontakt/`, `news/` | Weiterleitungen von den alten WordPress-URLs |
 | `assets/` | CSS, JS, Bilder (WebP, von ~29 MB auf ~0.8 MB komprimiert) |
 
-Header und Footer sind in jeder HTML-Datei enthalten. Bei Änderungen (z.B. Telefonnummer, Öffnungszeiten) in allen Dateien anpassen. Die Öffnungszeiten stehen zusätzlich in `assets/js/main.js` (`HOURS`, für den Live-Status) und im JSON-LD in `index.html`.
+Header und Footer sind in jeder HTML-Datei enthalten. Öffnungszeiten, Telefonnummern, E-Mail, Betriebsferien und Reifensaison kommen aus `content/site.json` (siehe unten); alle anderen Texte direkt in den HTML-Dateien ändern.
+
+## Website-Daten bearbeiten (`/admin`)
+
+Unter <https://www.garage-morina.ch/admin/> gibt es ein Formular ([Sveltia CMS](https://github.com/sveltia/sveltia-cms)) für:
+
+- Öffnungszeiten pro Tag
+- Betriebsferien: Hinweisbalken auf allen Seiten, Status «geöffnet/geschlossen» stellt auf Ferien um
+- Reifensaison: Monate und Text des Hinweises
+- Telefon Mobile/Festnetz und E-Mail
+
+Speichern erzeugt einen Commit auf `main`, der die Datei `content/site.json` ändert. Danach überträgt der Workflow `.github/workflows/deploy.yml` die Werte mit `scripts/apply-content.mjs` in alle Seiten und veröffentlicht sie. Nach etwa einer Minute ist die Änderung live. Ungültige Eingaben (z.B. `25:00-12:00`) lassen den Workflow fehlschlagen, die alte Version bleibt dann online.
+
+In den HTML-Dateien markieren `data-cms="…"`, `data-cms-href="…"` und `data-cms-content="…"` die Stellen, die das Skript ersetzt. Für den Live-Status erzeugt es zusätzlich `assets/js/content.js`. Nach einer Änderung an `content/site.json` lokal ausführen und mitcommitten:
+
+```sh
+node scripts/apply-content.mjs           # Seiten aktualisieren
+node scripts/apply-content.mjs --check   # nur prüfen, ob etwas veraltet ist
+```
+
+### Anmeldung einrichten
+
+Wer bearbeiten will, braucht ein GitHub-Konto mit Schreibrecht auf dieses Repository.
+
+- **Einfach (ohne Einrichtung):** Auf `/admin` «Sign In with Token» wählen und ein [Fine-grained Personal Access Token](https://github.com/settings/personal-access-tokens/new) eingeben: nur dieses Repository, Berechtigung *Contents: Read and write*. Das Token bleibt im Browser gespeichert.
+- **Komfortabel («Mit GitHub anmelden»):** Den Worker [sveltia-cms-auth](https://github.com/sveltia/sveltia-cms-auth) kostenlos bei Cloudflare deployen, eine GitHub OAuth App mit Callback-URL `https://<worker>/callback` anlegen, Client-ID/Secret im Worker hinterlegen und die Worker-URL in `admin/config.yml` bei `base_url` eintragen.
 
 ## Vor dem Livegang ausfüllen
 
@@ -33,9 +58,9 @@ Dann <http://localhost:8000> öffnen.
 ## Veröffentlichen auf GitHub Pages
 
 1. Neues Repository auf GitHub anlegen und diesen Ordner pushen.
-2. *Settings → Pages → Source:* «Deploy from a branch», Branch `main`, Ordner `/ (root)`.
+2. *Settings → Pages → Source:* «GitHub Actions». Der Workflow `.github/workflows/deploy.yml` veröffentlicht bei jedem Push auf `main` (ohne `scripts/`, `content/`, `.github/`).
 3. Eigene Domain:
-   - *Settings → Pages → Custom domain:* `www.garage-morina.ch` eintragen (GitHub legt dabei eine `CNAME`-Datei an).
+   - *Settings → Pages → Custom domain:* `www.garage-morina.ch` eintragen (bei «GitHub Actions» ist keine `CNAME`-Datei nötig).
    - Beim Domain-Anbieter DNS setzen:
      - `www` → `CNAME` auf `<github-benutzer>.github.io`
      - `garage-morina.ch` (Apex) → `A`-Records `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`

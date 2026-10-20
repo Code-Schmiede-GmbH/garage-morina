@@ -113,6 +113,7 @@ p { margin: 0 0 1em; }
 .notice .wrap { padding-top: 10px; padding-bottom: 10px; display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; text-align: center; }
 .notice a { color: #5c4600; font-weight: 700; }
 .notice[hidden] { display: none; }
+.notice-closure { background: #fde8e8; border-bottom-color: #f3c2c2; color: #6b1414; font-weight: 600; }
 
 /* Saison-Button (nur mobil, ersetzt den Hinweisbalken) */
 .season-fab { display: none; }
@@ -311,6 +312,9 @@ p { margin: 0 0 1em; }
 
   .notice { background: none; border: 0; }
   .notice .wrap { display: none; }
+  /* Betriebsferien bleiben auch mobil ein Balken */
+  .notice.notice-closure { background: #fde8e8; border-bottom: 1px solid #f3c2c2; }
+  .notice.notice-closure .wrap { display: flex; }
   .season-fab { display: grid; }
   .season-pop:not([hidden]) { display: block; }
 
