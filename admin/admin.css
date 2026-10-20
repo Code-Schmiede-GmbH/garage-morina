@@ -1,0 +1,55 @@
+/* Garage Morina – Admin, ergänzt assets/css/style.css */
+
+body { background: var(--bg-soft); }
+.admin-head { display: flex; align-items: center; gap: 16px; }
+.admin-title { font-weight: 700; color: var(--ink); }
+
+.admin { max-width: 760px; padding-top: 32px; padding-bottom: 120px; }
+.admin .form { margin-bottom: 24px; }
+.admin h1 { font-size: 1.75rem; }
+.admin-loading { color: var(--muted); }
+
+.admin-steps { padding-left: 1.3em; margin: 0 0 20px; }
+.admin-steps li { margin-bottom: 6px; }
+
+/* Öffnungszeiten */
+.admin-day { display: grid; grid-template-columns: 120px 1fr; gap: 12px; padding: 14px 0; border-top: 1px solid var(--line); }
+.admin-day:first-child { border-top: 0; }
+.admin-day-name { font-weight: 700; color: var(--ink); padding-top: 8px; }
+.admin-slots { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.admin-slot { display: flex; align-items: center; gap: 8px; }
+.admin-slot input { font: inherit; padding: 8px 10px; border: 1px solid #cfd3d9; border-radius: 8px; background: #fff; color: var(--text); }
+.admin-slot input:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 3px rgba(200,16,46,.15); }
+.admin-closed { color: var(--muted); padding-top: 8px; }
+.admin-link { background: none; border: 0; padding: 4px 0; font: inherit; font-weight: 600; color: var(--red); cursor: pointer; }
+.admin-link:hover { color: var(--red-dark); text-decoration: underline; }
+.admin-remove { width: 36px; height: 36px; border: 0; border-radius: 50%; background: none; color: var(--muted); font-size: 1.4rem; line-height: 1; cursor: pointer; }
+.admin-remove:hover { background: var(--bg-soft); color: var(--red); }
+
+/* Betriebsferien, Saison */
+.admin-check { display: flex; align-items: center; gap: 10px; font-weight: 600; color: var(--ink); margin-bottom: 16px; cursor: pointer; }
+.admin-check input { width: 20px; height: 20px; accent-color: var(--red); }
+.admin-closure[hidden] { display: none; }
+.admin-season + .admin-season { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 20px; }
+.admin-months { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.admin-months label { position: relative; cursor: pointer; }
+.admin-months input { position: absolute; opacity: 0; }
+.admin-months span { display: block; padding: 6px 12px; border: 1px solid #cfd3d9; border-radius: 999px; background: #fff; font-size: .95rem; }
+.admin-months input:checked + span { background: var(--red); border-color: var(--red); color: #fff; font-weight: 600; }
+.admin-months input:focus-visible + span { outline: 3px solid var(--red); outline-offset: 2px; }
+
+/* Meldungen und Speicherleiste */
+.admin-msg { margin: 0; font-weight: 600; }
+.admin-msg.is-error { color: var(--red); white-space: pre-line; }
+.admin-msg.is-ok { color: #1e8449; }
+.admin-msg a { font-weight: 700; }
+.admin-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: #fff; border-top: 1px solid var(--line); box-shadow: 0 -4px 16px rgba(0,0,0,.08); }
+.admin-bar .wrap { max-width: 760px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 12px; padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+
+@media (max-width: 600px) {
+  .admin-title { display: none; }
+  .admin-day { grid-template-columns: 1fr; gap: 4px; }
+  .admin-day-name { padding-top: 0; }
+  .admin-bar .wrap { flex-direction: column; align-items: stretch; }
+  .admin-bar .btn { width: 100%; }
+}

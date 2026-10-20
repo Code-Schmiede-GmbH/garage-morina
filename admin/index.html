@@ -6,9 +6,115 @@
   <meta name="robots" content="noindex">
   <title>Website bearbeiten – Garage Morina</title>
   <link rel="icon" href="../assets/img/favicon-32.png" sizes="32x32">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="admin.css">
 </head>
 <body>
-  <!-- Sveltia CMS bearbeitet content/site.json über GitHub, Einstellungen in config.yml -->
-  <script src="https://unpkg.com/@sveltia/cms@0.229.0/dist/sveltia-cms.js"></script>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="../" aria-label="Zur Website"><img src="../assets/img/logo.png" alt="Garage Morina" width="240" height="83"></a>
+      <div class="admin-head">
+        <span class="admin-title">Website bearbeiten</span>
+        <button class="btn btn-outline btn-sm" type="button" data-logout hidden>Abmelden</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="admin wrap">
+    <p class="admin-loading" data-loading>Wird geladen …</p>
+
+    <!-- Anmeldung -->
+    <form class="form admin-login" data-login hidden novalidate>
+      <h1>Anmelden</h1>
+      <p>Zum Bearbeiten braucht es einmalig einen Zugangsschlüssel von GitHub. Der Browser merkt ihn sich danach.</p>
+      <ol class="admin-steps">
+        <li><a data-token-link target="_blank" rel="noopener">Zugangsschlüssel bei GitHub erstellen →</a> (öffnet GitHub, Felder sind schon ausgefüllt)</li>
+        <li>Bei <strong>Repository access</strong> «Only select repositories» wählen und <strong>garage-morina</strong> auswählen.</li>
+        <li>Ganz unten auf <strong>Generate token</strong> klicken und den Schlüssel kopieren.</li>
+        <li>Hier einfügen:</li>
+      </ol>
+      <div class="field">
+        <label for="a-token">Zugangsschlüssel</label>
+        <input id="a-token" name="token" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…" required>
+      </div>
+      <p class="admin-msg is-error" data-login-error hidden role="alert"></p>
+      <button class="btn btn-primary" type="submit">Anmelden</button>
+    </form>
+
+    <!-- Formular -->
+    <form class="admin-editor" data-editor hidden novalidate>
+      <section class="form">
+        <h2>Öffnungszeiten</h2>
+        <p class="hint">Pro Tag ein oder mehrere Zeitfenster, z.B. vormittags und nachmittags. Ein Tag ohne Zeitfenster ist geschlossen.</p>
+        <div class="admin-days" data-days></div>
+      </section>
+
+      <section class="form">
+        <h2>Betriebsferien</h2>
+        <p class="hint">Zeigt auf allen Seiten einen roten Hinweisbalken. Während der Ferien steht beim Status «Betriebsferien» statt «geöffnet».</p>
+        <label class="admin-check"><input type="checkbox" name="closure.active"> Betriebsferien anzeigen</label>
+        <div class="admin-closure" data-closure-fields>
+          <div class="form-row">
+            <div class="field">
+              <label for="a-from">Erster Ferientag</label>
+              <input id="a-from" name="closure.from" type="date">
+            </div>
+            <div class="field">
+              <label for="a-to">Letzter Ferientag</label>
+              <input id="a-to" name="closure.to" type="date">
+            </div>
+          </div>
+          <div class="field">
+            <label for="a-before">Hinweis so viele Tage vorher anzeigen</label>
+            <input id="a-before" name="closure.showDaysBefore" type="number" min="0" max="90" inputmode="numeric">
+          </div>
+          <div class="field">
+            <label for="a-ctext">Text im Hinweisbalken</label>
+            <input id="a-ctext" name="closure.text" placeholder="Betriebsferien vom 22.12. bis 5.1. – ab 6.1. sind wir wieder für Sie da.">
+          </div>
+        </div>
+      </section>
+
+      <section class="form">
+        <h2>Reifensaison</h2>
+        <p class="hint">Hinweis zum Reifenwechsel in den gewählten Monaten. Betriebsferien haben Vorrang.</p>
+        <div class="admin-season" data-season="winter">
+          <h3>Winterreifen</h3>
+          <div class="admin-months" data-months></div>
+          <div class="form-row">
+            <div class="field"><label for="a-wtitle">Titel</label><input id="a-wtitle" name="season.winter.title"></div>
+            <div class="field"><label for="a-wbody">Text</label><input id="a-wbody" name="season.winter.body"></div>
+          </div>
+        </div>
+        <div class="admin-season" data-season="summer">
+          <h3>Sommerreifen</h3>
+          <div class="admin-months" data-months></div>
+          <div class="form-row">
+            <div class="field"><label for="a-stitle">Titel</label><input id="a-stitle" name="season.summer.title"></div>
+            <div class="field"><label for="a-sbody">Text</label><input id="a-sbody" name="season.summer.body"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="form">
+        <h2>Kontakt</h2>
+        <p class="hint">Erscheint in Kopf- und Fusszeile, auf der Kontaktseite, im Impressum und in der Datenschutzerklärung.</p>
+        <div class="form-row">
+          <div class="field"><label for="a-mobile">Telefon Mobile</label><input id="a-mobile" name="contact.mobile" type="tel" placeholder="079 681 64 68"></div>
+          <div class="field"><label for="a-landline">Telefon Festnetz</label><input id="a-landline" name="contact.landline" type="tel" placeholder="062 844 20 20"></div>
+        </div>
+        <div class="field"><label for="a-email">E-Mail</label><input id="a-email" name="contact.email" type="email"></div>
+      </section>
+
+      <div class="admin-bar">
+        <div class="wrap">
+          <p class="admin-msg" data-status role="status"></p>
+          <button class="btn btn-primary" type="submit" data-save>Speichern &amp; veröffentlichen</button>
+        </div>
+      </div>
+    </form>
+  </main>
+
+  <script src="admin.js" defer></script>
 </body>
 </html>

@@ -187,10 +187,7 @@ const runtime = {
 const outputs = new Map();
 for (const name of readdirSync(ROOT).filter((f) => f.endsWith('.html'))) {
   const path = join(ROOT, name);
-  // Unter Windows checkt Git mit CRLF aus; intern mit LF arbeiten
-  const raw = readFileSync(path, 'utf8');
-  const html = apply(name, raw.replace(/\r\n/g, '\n'));
-  outputs.set(path, raw.includes('\r\n') ? html.replace(/\n/g, '\r\n') : html);
+  outputs.set(path, apply(name, readFileSync(path, 'utf8').replace(/\r\n/g, '\n')));
 }
 outputs.set(join(ROOT, 'assets/js/content.js'),
   '// Automatisch erzeugt aus content/site.json von scripts/apply-content.mjs. Nicht von Hand ändern.\n' +
@@ -199,9 +196,11 @@ outputs.set(join(ROOT, 'assets/js/content.js'),
     .replace(/"(\[[\d,[\]]*\])"/g, '$1') + ';\n');
 
 let stale = 0;
-for (const [path, text] of outputs) {
+for (const [path, lf] of outputs) {
   let before = '';
   try { before = readFileSync(path, 'utf8'); } catch {}
+  // Unter Windows checkt Git mit CRLF aus; das bestehende Zeilenende beibehalten
+  const text = before.includes('\r\n') ? lf.replace(/\n/g, '\r\n') : lf;
   if (before === text) continue;
   stale++;
   console.log((CHECK ? 'veraltet: ' : 'aktualisiert: ') + path.slice(ROOT.length + 1).replace(/\\/g, '/'));
