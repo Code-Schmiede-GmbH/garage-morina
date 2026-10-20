@@ -66,9 +66,17 @@
   var notice = document.querySelector('[data-season-notice]');
   if (notice && [3, 4, 10, 11].indexOf(now.month) !== -1) {
     var winter = now.month >= 10;
-    notice.querySelector('[data-season-text]').textContent = winter
+    var text = winter
       ? 'Zeit für Winterreifen: Jetzt Termin für Reifenwechsel & Einlagerung sichern.'
       : 'Zeit für Sommerreifen: Jetzt Termin für Reifenwechsel & Einlagerung sichern.';
+    notice.querySelector('[data-season-text]').textContent = text;
+    notice.setAttribute('data-season', winter ? 'winter' : 'summer');
+    // Mobil ersetzt ein runder Button den Balken
+    var fab = notice.querySelector('[data-season-fab]');
+    if (fab) {
+      fab.setAttribute('aria-label', text + ' Termin anfragen');
+      fab.title = winter ? 'Winterreifen: Termin anfragen' : 'Sommerreifen: Termin anfragen';
+    }
     notice.hidden = false;
   }
 
